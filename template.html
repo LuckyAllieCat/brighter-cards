@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brighter Cards</title>
+<meta name="theme-color" content="#1d9fe6">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap">
+<style>
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+:root {
+  --primary: #1d9fe6; --primary-dark: #1680c0; --on-primary: #ffffff;
+  --bg: #ffffff; --surface: #ffffff; --surface-2: #f3f6f8; --text: #1b1f22; --muted: #6b7680;
+  --divider: #e2e7eb; --counts-bg: #b9e3fa; --hover: rgba(0,0,0,.05);
+  --new: #1565c0; --learn: #c62828; --due: #2e7d32; --zero: #a9b2b9;
+  --again: #d9363e; --hard: #4b5963; --good: #43a047; --easy: #1d9fe6; --showbtn: #4b5963;
+  --code-bg: #f1f4f6; --flag: #e53935; --scrim: rgba(0,0,0,.4); --shadow: 0 2px 6px rgba(0,0,0,.25);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --primary: #1e2a33; --primary-dark: #141c22; --on-primary: #e8eef2;
+    --bg: #1c1f22; --surface: #25292d; --surface-2: #2b3035; --text: #e6eaed; --muted: #9aa5ad;
+    --divider: #353b41; --counts-bg: #243745; --hover: rgba(255,255,255,.06);
+    --new: #64b5f6; --learn: #ef7373; --due: #7cc47f; --zero: #58626a;
+    --again: #b8323a; --hard: #4d5b66; --good: #3d8b41; --easy: #1a86c4; --showbtn: #3a454e;
+    --code-bg: #2b3035; --flag: #ef5350; --scrim: rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --primary: #1e2a33; --primary-dark: #141c22; --on-primary: #e8eef2;
+  --bg: #1c1f22; --surface: #25292d; --surface-2: #2b3035; --text: #e6eaed; --muted: #9aa5ad;
+  --divider: #353b41; --counts-bg: #243745; --hover: rgba(255,255,255,.06);
+  --new: #64b5f6; --learn: #ef7373; --due: #7cc47f; --zero: #58626a;
+  --again: #b8323a; --hard: #4d5b66; --good: #3d8b41; --easy: #1a86c4; --showbtn: #3a454e;
+  --code-bg: #2b3035; --flag: #ef5350; --scrim: rgba(0,0,0,.6);
+}
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 16px/1.4 Roboto, "Segoe UI", system-ui, sans-serif; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, .row:focus-visible { outline: 2px solid var(--new); outline-offset: -2px; }
+svg { width: 24px; height: 24px; fill: currentColor; flex: none; }
+
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--bg); padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.appbar { background: var(--primary); color: var(--on-primary); display: flex; align-items: center; gap: 4px; min-height: 56px; padding-inline: 4px; box-shadow: var(--shadow); position: relative; z-index: 2; }
+.appbar .ib { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; }
+.appbar .ib:hover { background: rgba(255,255,255,.12); }
+.appbar .ib:disabled { opacity: .45; cursor: default; background: none; }
+.titles { flex: 1; min-width: 0; padding-left: 12px; }
+.titles h1 { margin: 0; font-size: 20px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.titles p { margin: 0; font-size: 14px; opacity: .9; }
+
+/* deck list */
+.list { flex: 1; overflow-y: auto; padding-bottom: 96px; }
+.row { display: flex; align-items: center; min-height: 56px; border-bottom: 1px solid var(--divider); user-select: none; -webkit-user-select: none; cursor: pointer; }
+.row:hover { background: var(--hover); }
+.row.sub { background: var(--surface-2); }
+.row.sub .name { padding-left: 4px; font-size: 15px; }
+.exp { width: 44px; height: 56px; display: grid; place-items: center; color: var(--muted); }
+.exp svg { transition: transform .15s; }
+.exp.open svg { transform: rotate(90deg); }
+.row.sub .exp { width: 60px; }
+.name { flex: 1; min-width: 0; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nums { display: flex; font-variant-numeric: tabular-nums; font-size: 15px; padding-right: 12px; }
+.nums span { width: 38px; text-align: right; }
+.n { color: var(--new); } .l { color: var(--learn); } .r { color: var(--due); }
+.nums .z { color: var(--zero); }
+.today { text-align: center; color: var(--muted); font-size: 13px; padding: 18px 16px; }
+.fab { position: absolute; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: 56px; height: 56px; border-radius: 16px; background: var(--easy); color: #fff; display: grid; place-items: center; box-shadow: 0 3px 8px rgba(0,0,0,.3); }
+
+/* reviewer */
+.countbar { background: var(--counts-bg); padding: 3px 16px; font-size: 15px; display: flex; gap: 10px; font-variant-numeric: tabular-nums; }
+.countbar .cur { text-decoration: underline; text-underline-offset: 3px; }
+.cardwrap { flex: 1; overflow-y: auto; background: var(--surface); display: flex; }
+.card { margin: auto; width: 100%; max-width: 640px; padding: 24px 16px 32px; text-align: center; font: 20px/1.45 Arial, "Liberation Sans", Roboto, sans-serif; overflow-wrap: anywhere; }
+.card hr { border: 0; border-top: 1px solid var(--divider); margin: 18px 0; }
+.card pre { text-align: left; background: var(--code-bg); border-radius: 6px; padding: 10px 12px; font: 15px/1.5 "Roboto Mono", ui-monospace, monospace; overflow-x: auto; white-space: pre; margin: 12px auto 0; max-width: 100%; width: fit-content; min-width: 60%; }
+.card code { font: .85em "Roboto Mono", ui-monospace, monospace; background: var(--code-bg); padding: 1px 4px; border-radius: 3px; }
+.card .ans { font-weight: 400; }
+.card .big { font-size: 26px; }
+.card .filled { margin-top: 10px; color: var(--muted); }
+.card .filled u { color: var(--text); text-decoration-color: var(--due); text-decoration-thickness: 2px; }
+.card .note { margin-top: 12px; font-size: 16px; color: var(--muted); }
+.card .lbl { margin-top: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.card .listen { color: var(--muted); font-size: 17px; }
+.card ul.opts { list-style: none; padding: 0; margin: 14px 0 0; font-size: 17px; color: var(--muted); display: grid; gap: 4px; }
+.speak { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--easy); vertical-align: middle; margin: 6px; }
+.speak:hover { background: var(--hover); }
+.speak.bigspk { width: 72px; height: 72px; background: var(--surface-2); }
+.speak.bigspk svg { width: 36px; height: 36px; }
+.bottom { display: grid; grid-template-columns: repeat(4, 1fr); min-height: 56px; }
+.bottom button { color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 2px; line-height: 1.2; }
+.bottom small { font-size: 12px; opacity: .92; }
+.bottom b { font-weight: 500; font-size: 15px; }
+.bottom .show { grid-column: 1 / -1; background: var(--showbtn); font-weight: 500; letter-spacing: .06em; text-transform: uppercase; font-size: 15px; }
+.e1 { background: var(--again); } .e2 { background: var(--hard); } .e3 { background: var(--good); } .e4 { background: var(--easy); }
+.bottom button:active { filter: brightness(.9); }
+.done { margin: auto; text-align: center; padding: 32px 16px; max-width: 420px; }
+.done h2 { font-weight: 500; font-size: 22px; margin: 0 0 8px; }
+.done p { color: var(--muted); margin: 0 0 20px; }
+.btn { background: var(--easy); color: #fff; padding: 10px 20px; border-radius: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; font-size: 14px; }
+.btn.flat { background: none; color: var(--new); }
+.btn.danger { background: var(--again); }
+
+/* forms */
+.form { flex: 1; overflow-y: auto; padding: 16px; display: grid; gap: 18px; align-content: start; max-width: 640px; width: 100%; margin-inline: auto; box-sizing: border-box; }
+.field { display: grid; gap: 6px; }
+.field label, .sect { font-size: 13px; color: var(--muted); font-weight: 500; }
+.sect { text-transform: uppercase; letter-spacing: .08em; color: var(--new); margin-top: 8px; }
+.field input, .field select, .field textarea { font: inherit; color: var(--text); background: var(--surface); border: 0; border-bottom: 2px solid var(--divider); padding: 8px 2px; border-radius: 0; }
+.field textarea { min-height: 72px; resize: vertical; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-bottom-color: var(--easy); }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.switch input { width: 20px; height: 20px; accent-color: var(--easy); }
+.help { color: var(--muted); font-size: 14px; margin: 0; }
+.btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* drawer, sheet, menu, toast */
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 10; }
+.drawer { position: absolute; top: 0; bottom: 0; left: 0; width: min(300px, 82vw); background: var(--surface); z-index: 11; box-shadow: var(--shadow); padding-top: env(safe-area-inset-top, 0px); display: flex; flex-direction: column; }
+.drawer header { background: var(--easy); color: #fff; padding: 36px 20px 16px; }
+.drawer header b { font-size: 20px; font-weight: 500; display: block; }
+.drawer header span { font-size: 14px; opacity: .9; }
+.drawer button, .sheet button, .menu button { display: flex; align-items: center; gap: 28px; width: 100%; text-align: left; padding: 14px 20px; font-size: 15px; font-weight: 500; }
+.drawer button:hover, .sheet button:hover, .menu button:hover { background: var(--hover); }
+.drawer button svg { color: var(--muted); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface); z-index: 11; border-radius: 12px 12px 0 0; padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px)); max-width: 560px; margin-inline: auto; }
+.sheet h3 { margin: 8px 20px 4px; font-size: 16px; font-weight: 500; }
+.sheet p { margin: 0 20px 8px; color: var(--muted); font-size: 14px; }
+.sheet .warn { color: var(--again); }
+.menu { position: absolute; right: 8px; top: calc(8px + env(safe-area-inset-top, 0px)); background: var(--surface); z-index: 11; min-width: 200px; border-radius: 4px; box-shadow: 0 4px 14px rgba(0,0,0,.3); padding: 8px 0; }
+.menu button { font-weight: 400; }
+.menu button:disabled { opacity: .45; }
+.toast { position: absolute; left: 50%; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: #323232; color: #fff; padding: 12px 20px; border-radius: 6px; z-index: 20; font-size: 14px; max-width: calc(100% - 32px); box-sizing: border-box; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const DATA = /*DATA*/null;
+const ICON = {
+  menu: 'M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z',
+  back: 'M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z',
+  undo: 'M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z',
+  flag: 'M14 6l-1-2H5v17h2v-7h5l1 2h7V6h-6zm4 8h-4l-1-2H7V6h5l1 2h5v6z',
+  flagOn: 'M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z',
+  more: 'M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z',
+  vol: 'M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z',
+  add: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z',
+  chev: 'M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z',
+  check: 'M9 16.17L4.83 12l-1.42 1.42L9 19 21 7l-1.41-1.41z',
+  decks: 'M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z',
+  tune: 'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
+  cloud: 'M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM10 17l-3.5-3.5 1.41-1.41L10 14.17 15.18 9l1.41 1.41L10 17z',
+  cloudOff: 'M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17l1.46 1.46C10.21 6.23 11.08 6 12 6c3.04 0 5.5 2.46 5.5 5.5v.5H19c1.66 0 3 1.34 3 3 0 1.13-.64 2.11-1.56 2.62l1.45 1.45C23.16 18.16 24 16.68 24 15c0-2.64-2.05-4.78-4.65-4.96zM3 5.27l2.75 2.74C2.56 8.15 0 10.77 0 14c0 3.31 2.69 6 6 6h11.73l2 2L21 20.73 4.27 4 3 5.27zM7.73 10l8 8H6c-2.21 0-4-1.79-4-4s1.79-4 4-4h1.73z',
+};
+const svg = (k, label) => `<svg viewBox="0 0 24 24" ${label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"'}><path d="${ICON[k]}"/></svg>`;
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const txt = s => esc(s).replace(/\n/g, '<br>');
+
+/* ---------- storage ---------- */
+const LS_KEY = 'brighterCards.v1';
+const MINE = { key: 'mine', name: 'My cards', lang: '', subs: [] };
+let S = { cards: {}, meta: { day: -1, newDone: {}, revDone: {}, studied: 0, secs: 0, m: 0 }, settings: { newPerDay: 20, revPerDay: 200, autoplay: true, m: 0 }, custom: { list: [], m: 0 }, open: {} };
+try { const raw = localStorage.getItem(LS_KEY); if (raw) Object.assign(S, JSON.parse(raw)); } catch (e) {}
+function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {} }
+
+const DECKS = DATA.decks.concat([MINE]);
+const DECK = Object.fromEntries(DECKS.map(d => [d.key, d]));
+let ALL = [];
+function rebuildCards() {
+  ALL = DATA.cards.concat(S.custom.list.filter(c => !c.del).map(c => ({ id: c.id, d: c.d, u: c.u, f: txt(c.f), b: txt(c.b), say: '', custom: 1 })));
+}
+rebuildCards();
+
+/* ---------- time ---------- */
+const DAY_MS = 864e5, ROLLOVER_H = 4;
+const today = () => { const n = new Date(); return Math.floor((n.getTime() - n.getTimezoneOffset() * 6e4 - ROLLOVER_H * 36e5) / DAY_MS); };
+function rollover() {
+  const d = today();
+  if (S.meta.day !== d) { S.meta = { day: d, newDone: {}, revDone: {}, studied: 0, secs: 0, m: Date.now() }; }
+}
+
+/* ---------- scheduler (Anki-style SM-2) ---------- */
+const LEARN = [1, 10], RELEARN = [10], LEARN_AHEAD = 20 * 6e4, MAX_IVL = 36500;
+const st = id => S.cards[id] || { s: 'n' };
+function schedule(prev, ease, fuzz) {
+  const now = Date.now(), t = today();
+  const c = { ...prev, m: now, reps: (prev.reps || 0) + 1, lapses: prev.lapses || 0 };
+  delete c.bury;
+  if (c.s === 'n') { c.s = 'l'; c.step = 0; c.ease = 2.5; }
+  const learn = mins => { c.due = now + mins * 6e4; return c; };
+  const grad = ivl => { c.s = 'r'; c.ivl = Math.min(MAX_IVL, ivl); c.due = t + c.ivl; delete c.step; return c; };
+  const fz = ivl => (fuzz && ivl >= 3) ? Math.max(1, Math.round(ivl * (0.95 + Math.random() * 0.1))) : ivl;
+  if (c.s === 'l' || c.s === 'rl') {
+    const steps = c.s === 'l' ? LEARN : RELEARN, cur = steps[c.step] || steps[0];
+    if (ease === 1) { c.step = 0; return learn(steps[0]); }
+    if (ease === 2) return learn(c.step === 0 && steps.length > 1 ? (steps[0] + steps[1]) / 2 : steps.length === 1 ? cur * 1.5 : cur);
+    if (ease === 3) {
+      if (c.step + 1 < steps.length) { c.step++; return learn(steps[c.step]); }
+      return grad(c.s === 'l' ? 1 : Math.max(1, c.ivl || 1));
+    }
+    return grad(c.s === 'l' ? fz(4) : Math.max(1, (c.ivl || 1) + 1));
+  }
+  const ivl = c.ivl || 1, e = c.ease || 2.5;
+  if (ease === 1) { c.lapses++; c.ease = Math.max(1.3, e - 0.2); c.ivl = 1; c.s = 'rl'; c.step = 0; return learn(RELEARN[0]); }
+  const hard = Math.max(ivl + 1, Math.round(ivl * 1.2));
+  const good = Math.max(hard + 1, Math.round(ivl * e));
+  const easy = Math.max(good + 1, Math.round(ivl * e * 1.3));
+  if (ease === 2) { c.ease = Math.max(1.3, e - 0.15); return grad(fz(hard)); }
+  if (ease === 3) return grad(fz(good));
+  c.ease = e + 0.15; return grad(fz(easy));
+}
+function fmtIvl(prev, ease) {
+  const c = schedule(prev, ease, false);
+  if (c.s === 'r') return fmtDays(c.ivl);
+  const mins = Math.max(1, Math.round((c.due - Date.now()) / 6e4));
+  return mins < 60 ? `< ${mins} min` : `${Math.round(mins / 60)} h`;
+}
+function fmtDays(d) {
+  if (d < 30) return `${d} d`;
+  if (d < 365) return `${(d / 30).toFixed(1).replace(/\.0$/, '')} mo`;
+  return `${(d / 365).toFixed(1).replace(/\.0$/, '')} yr`;
+}
+
+/* ---------- queues ---------- */
+function deckCards(dk, sub) { return ALL.filter(c => c.d === dk && (sub == null || c.u === sub)); }
+function avail(c, t) { const s = st(c.id); return !s.sus && s.bury !== t; }
+function queues(dk, sub) {
+  rollover();
+  const t = today(), now = Date.now(), soon = now + LEARN_AHEAD;
+  const nu = [], lrn = [], lrnLater = [], rev = [];
+  for (const c of deckCards(dk, sub)) {
+    if (!avail(c, t)) continue;
+    const s = st(c.id);
+    if (s.s === 'n') nu.push(c);
+    else if (s.s === 'r') { if (s.due <= t) rev.push(c); }
+    else if (s.due <= soon) lrn.push(c);
+    else if (s.due < nextDayEndMs()) lrnLater.push(c);
+  }
+  const newLeft = Math.max(0, S.settings.newPerDay - (S.meta.newDone[dk] || 0));
+  const revLeft = Math.max(0, S.settings.revPerDay - (S.meta.revDone[dk] || 0));
+  rev.sort((a, b) => st(a.id).due - st(b.id).due);
+  lrn.sort((a, b) => st(a.id).due - st(b.id).due);
+  return { nu: nu.slice(0, newLeft), lrn, lrnLater, rev: rev.slice(0, revLeft) };
+}
+function nextDayEndMs() { const n = new Date(); const t = today(); return (t + 1) * DAY_MS + n.getTimezoneOffset() * 6e4 + ROLLOVER_H * 36e5; }
+
+/* ---------- saving (this browser) ---------- */
+function markDirty() { saveLocal(); }
+
+/* ---------- speech ---------- */
+let voices = [];
+function loadVoices() { try { voices = speechSynthesis.getVoices(); } catch (e) {} }
+if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function speak(text, lang) {
+  if (!text || !lang || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang; u.rate = 0.9;
+    const v = voices.find(v => v.lang.replace('_', '-') === lang) || voices.find(v => v.lang.slice(0, 2) === lang.slice(0, 2));
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+/* ---------- UI ---------- */
+const app = document.getElementById('app');
+let view = { name: 'decks' };
+let overlay = '';   // drawer / sheet / menu html
+let toastTimer = 0;
+function toast(msg) {
+  document.querySelector('.toast')?.remove();
+  const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg;
+  app.appendChild(t); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), 2600);
+}
+function go(v) { view = v; overlay = ''; render(); }
+function render() {
+  rollover();
+  const html = view.name === 'decks' ? renderDecks() : view.name === 'review' ? renderReview() : view.name === 'add' ? renderAdd() : renderSettings();
+  app.innerHTML = html + overlay;
+  if (view.name === 'review') afterReviewRender();
+}
+
+function deckName(dk, sub) { const d = DECK[dk]; return sub == null ? d.name : `${d.name} › ${d.subs[sub]}`; }
+function countsHtml(q) {
+  const n = [['n', q.nu.length], ['l', q.lrn.length + q.lrnLater.length], ['r', q.rev.length]];
+  return `<div class="nums">${n.map(([k, v]) => `<span class="${v ? k : 'z'}">${v}</span>`).join('')}</div>`;
+}
+function renderDecks() {
+  const rows = [];
+  for (const d of DECKS) {
+    if (d.key === 'mine' && !ALL.some(c => c.d === 'mine')) continue;
+    const open = !!S.open[d.key], hasSubs = d.subs.length > 0;
+    rows.push(`<div class="row" tabindex="0" data-deck="${d.key}">
+      <button class="exp ${open ? 'open' : ''}" data-toggle="${d.key}" aria-label="${open ? 'Collapse' : 'Expand'} ${esc(d.name)}" ${hasSubs ? '' : 'style="visibility:hidden"'}>${svg('chev')}</button>
+      <div class="name">${esc(d.name)}</div>${countsHtml(queues(d.key))}</div>`);
+    if (open) d.subs.forEach((s, i) => rows.push(`<div class="row sub" tabindex="0" data-deck="${d.key}" data-sub="${i}">
+      <span class="exp"></span><div class="name">${esc(s)}</div>${countsHtml(queues(d.key, i))}</div>`));
+  }
+  const mins = Math.round(S.meta.secs / 60);
+  return `<section class="screen">
+    <header class="appbar">
+      <button class="ib" data-act="drawer" aria-label="Open menu">${svg('menu')}</button>
+      <div class="titles"><h1>Brighter Cards</h1></div>
+    </header>
+    <div class="list">${rows.join('')}
+      <div class="today">Studied ${S.meta.studied} card${S.meta.studied === 1 ? '' : 's'} in ${mins} minute${mins === 1 ? '' : 's'} today.</div>
+    </div>
+    <button class="fab" data-act="add" aria-label="Add a card">${svg('add')}</button>
+  </section>`;
+}
+
+/* reviewer */
+let R = null;   // {dk, sub, card, side, shownAt, undo:[], count}
+const UNDO = [];
+function startReview(dk, sub) { R = { dk, sub, card: null, side: 'q', count: 0 }; pickNext(); go({ name: 'review' }); }
+function pickNext() {
+  const q = queues(R.dk, R.sub), now = Date.now();
+  const lrnNow = q.lrn.filter(c => st(c.id).due <= now);
+  let c = null;
+  if (lrnNow.length) c = lrnNow[0];
+  else if (q.rev.length || q.nu.length) {
+    const takeNew = q.nu.length && (!q.rev.length || R.count % 4 === 3);
+    c = takeNew ? q.nu[0] : q.rev[0];
+  } else if (q.lrn.length) c = q.lrn[0];
+  R.card = c; R.side = 'q'; R.shownAt = Date.now(); R.q = q;
+  R.queue = !c ? '' : st(c.id).s === 'n' ? 'n' : st(c.id).s === 'r' ? 'r' : 'l';
+}
+function minutesLeft(q) {
+  const n = q.nu.length + q.lrn.length + q.rev.length;
+  const avg = S.meta.studied >= 5 ? S.meta.secs / S.meta.studied : 10;
+  const m = Math.max(1, Math.round(n * avg / 60));
+  return `${m} minute${m === 1 ? '' : 's'} left`;
+}
+function speakBtn(c, big) { const lang = DECK[c.d].lang; return c.say && lang ? `<button class="speak ${big ? 'bigspk' : ''}" data-act="speak" aria-label="Play audio">${svg('vol')}</button>` : ''; }
+function renderReview() {
+  const c = R.card, q = R.q;
+  const bar = `<header class="appbar">
+      <button class="ib" data-act="home" aria-label="Back to decks">${svg('back')}</button>
+      <div class="titles"><h1>${esc(deckName(R.dk, R.sub))}</h1><p>${c ? minutesLeft(q) : 'Finished'}</p></div>
+      <button class="ib" data-act="undo" aria-label="Undo" ${UNDO.length ? '' : 'disabled'}>${svg('undo')}</button>
+      ${c ? `<button class="ib" data-act="flag" aria-label="${st(c.id).flag ? 'Remove flag' : 'Flag card'}" ${st(c.id).flag ? 'style="color:var(--flag)"' : ''}>${svg(st(c.id).flag ? 'flagOn' : 'flag')}</button>
+      <button class="ib" data-act="rmenu" aria-label="More options">${svg('more')}</button>` : ''}
+    </header>`;
+  if (!c) {
+    const later = q.lrnLater.length ? Math.min(...q.lrnLater.map(x => st(x.id).due)) : 0;
+    const wait = later ? Math.max(1, Math.round((later - Date.now()) / 6e4)) : 0;
+    return `<section class="screen">${bar}
+      <div class="cardwrap"><div class="done">
+        <h2>Congratulations!</h2>
+        <p>You have finished this deck for now.${wait ? ` More learning cards will be due in ${wait} minute${wait === 1 ? '' : 's'}.` : ' Come back tomorrow for more.'}</p>
+        <button class="btn" data-act="home">Back to decks</button>
+      </div></div></section>`;
+  }
+  const k = R.queue;
+  const counts = `<div class="countbar"><span class="n ${k === 'n' ? 'cur' : ''}">${q.nu.length}</span><span class="l ${k === 'l' ? 'cur' : ''}">${q.lrn.length + q.lrnLater.length}</span><span class="r ${k === 'r' ? 'cur' : ''}">${q.rev.length}</span></div>`;
+  const dict = c.auto && !/class="ans big"/.test(c.f);
+  let body = dict ? `<div>${speakBtn(c, true)}</div>${c.f}` : c.f + (c.auto ? `<div>${speakBtn(c)}</div>` : '');
+  if (R.side === 'a') body += `<hr id="answer">${c.b}${!c.auto ? `<div>${speakBtn(c)}</div>` : ''}`;
+  const s = st(c.id);
+  const btns = R.side === 'q'
+    ? `<button class="show" data-act="show">Show answer</button>`
+    : [['Again', 1], ['Hard', 2], ['Good', 3], ['Easy', 4]].map(([n, e]) => `<button class="e${e}" data-ease="${e}"><small>${fmtIvl(s, e)}</small><b>${n}</b></button>`).join('');
+  return `<section class="screen">${bar}${counts}
+    <div class="cardwrap" data-act="cardtap"><div class="card">${body}</div></div>
+    <div class="bottom">${btns}</div></section>`;
+}
+function afterReviewRender() {
+  const c = R.card; if (!c || !S.settings.autoplay) return;
+  const lang = DECK[c.d].lang; if (!lang || !c.say) return;
+  if (R.side === 'q' && c.auto && !R.spokeQ) { R.spokeQ = true; speak(c.say, lang); }
+  if (R.side === 'a' && !c.auto && !R.spokeA) { R.spokeA = true; speak(c.say, lang); }
+}
+function showAnswer() { if (R.side === 'q') { R.side = 'a'; render(); document.getElementById('answer')?.scrollIntoView({ block: 'nearest' }); } }
+function answer(ease) {
+  const c = R.card; if (!c || R.side !== 'a') return;
+  const prev = st(c.id);
+  UNDO.push({ id: c.id, prev: S.cards[c.id] ? { ...S.cards[c.id] } : null, meta: JSON.parse(JSON.stringify(S.meta)), dk: R.dk, sub: R.sub });
+  if (UNDO.length > 30) UNDO.shift();
+  S.cards[c.id] = schedule(prev, ease, true);
+  if (prev.s === 'n') S.meta.newDone[c.d] = (S.meta.newDone[c.d] || 0) + 1;
+  if (prev.s === 'r') S.meta.revDone[c.d] = (S.meta.revDone[c.d] || 0) + 1;
+  S.meta.studied++; S.meta.secs += Math.min(60, (Date.now() - R.shownAt) / 1000); S.meta.m = Date.now();
+  markDirty(c.d); markDirty('meta');
+  R.count++; R.spokeQ = R.spokeA = false;
+  pickNext(); render();
+}
+function undo() {
+  const u = UNDO.pop(); if (!u) return;
+  if (u.prev) S.cards[u.id] = { ...u.prev, m: Date.now() }; else S.cards[u.id] = { s: 'n', m: Date.now() };
+  S.meta = { ...u.meta, m: Date.now() };
+  const card = ALL.find(c => c.id === u.id);
+  markDirty(card.d); markDirty('meta');
+  if (!R || R.dk !== u.dk || R.sub !== u.sub) R = { dk: u.dk, sub: u.sub, count: 0 };
+  R.card = card; R.side = 'q'; R.shownAt = Date.now(); R.q = queues(R.dk, R.sub); R.spokeQ = R.spokeA = false;
+  const s = st(u.id); R.queue = s.s === 'n' ? 'n' : s.s === 'r' ? 'r' : 'l';
+  toast('Undid last answer');
+  go({ name: 'review' });
+}
+function setCard(id, patch, msg) {
+  S.cards[id] = { ...st(id), ...patch, m: Date.now() };
+  const c = ALL.find(x => x.id === id); markDirty(c.d);
+  if (msg) toast(msg);
+}
+
+/* add card */
+function renderAdd() {
+  const pre = view.deck || (R ? `${R.dk}|${R.sub ?? ''}` : 'mine|');
+  const opts = DECKS.flatMap(d => [[`${d.key}|`, d.name]].concat(d.subs.map((s, i) => [`${d.key}|${i}`, `${d.name} › ${s}`])))
+    .map(([v, n]) => `<option value="${v}" ${v === pre ? 'selected' : ''}>${esc(n)}</option>`).join('');
+  return `<section class="screen">
+    <header class="appbar">
+      <button class="ib" data-act="home" aria-label="Close">${svg('back')}</button>
+      <div class="titles"><h1>Add</h1></div>
+      <button class="ib" data-act="saveCard" aria-label="Save card">${svg('check')}</button>
+    </header>
+    <form class="form" id="addForm">
+      <div class="field"><label for="fType">Type</label><select id="fType" disabled><option>Basic</option></select></div>
+      <div class="field"><label for="fDeck">Deck</label><select id="fDeck">${opts}</select></div>
+      <div class="field"><label for="fFront">Front</label><textarea id="fFront" placeholder="e.g. kedi"></textarea></div>
+      <div class="field"><label for="fBack">Back</label><textarea id="fBack" placeholder="e.g. cat"></textarea></div>
+      <div class="btnrow"><button class="btn" type="submit">Add card</button></div>
+    </form></section>`;
+}
+function saveCard() {
+  const f = document.getElementById('fFront').value.trim(), b = document.getElementById('fBack').value.trim();
+  if (!f || !b) { toast('Fill in both the front and the back'); return; }
+  const [d, u] = document.getElementById('fDeck').value.split('|');
+  S.custom.list.push({ id: 'my.' + Date.now().toString(36), d, u: u === '' ? -1 : +u, f, b, m: Date.now() });
+  S.custom.m = Date.now(); rebuildCards(); markDirty('custom');
+  view.deck = `${d}|${u}`;
+  document.getElementById('fFront').value = ''; document.getElementById('fBack').value = '';
+  document.getElementById('fFront').focus();
+  toast(`Added to ${d === 'mine' ? 'My cards' : DECK[d].name}`);
+}
+
+/* settings */
+function renderSettings() {
+  return `<section class="screen">
+    <header class="appbar">
+      <button class="ib" data-act="saveSettings" aria-label="Back">${svg('back')}</button>
+      <div class="titles"><h1>Settings</h1></div>
+    </header>
+    <div class="form">
+      <div class="sect">Daily limits (per deck)</div>
+      <div class="field"><label for="sNew">New cards/day</label><input id="sNew" type="number" min="0" max="500" inputmode="numeric" value="${S.settings.newPerDay}"></div>
+      <div class="field"><label for="sRev">Maximum reviews/day</label><input id="sRev" type="number" min="0" max="9999" inputmode="numeric" value="${S.settings.revPerDay}"></div>
+      <div class="sect">Audio</div>
+      <label class="switch" for="sAuto"><span>Play pronunciation automatically<br><span class="help">Turkish, Russian and Italian cards use your phone's text-to-speech voices.</span></span><input id="sAuto" type="checkbox" ${S.settings.autoplay ? 'checked' : ''}></label>
+      <div class="sect">Backup</div>
+      <p class="help">Your progress is saved in this browser. Save a backup now and then, and restore it if you clear your browser data or switch phones.</p>
+      <div class="btnrow"><button class="btn" data-act="saveBackup">Save backup file</button><button class="btn flat" data-act="copyBackup">Copy as text</button></div>
+      <div class="field"><label for="sFile">Restore from a backup file</label><input id="sFile" type="file" accept=".json,application/json"></div>
+      <div class="field"><label for="sRestore">Or paste a backup</label><textarea id="sRestore" placeholder="Paste a backup here"></textarea></div>
+      <div class="btnrow"><button class="btn flat" data-act="restore">Restore</button></div>
+      <p class="help">${DATA.cards.length} cards: core vocabulary plus the words and phrases from your Brighter Path lessons.</p>
+    </div></section>`;
+}
+function saveSettings() {
+  const n = Math.max(0, Math.min(500, parseInt(document.getElementById('sNew').value, 10) || 0));
+  const r = Math.max(0, Math.min(9999, parseInt(document.getElementById('sRev').value, 10) || 0));
+  const a = document.getElementById('sAuto').checked;
+  if (n !== S.settings.newPerDay || r !== S.settings.revPerDay || a !== S.settings.autoplay) {
+    S.settings = { newPerDay: n, revPerDay: r, autoplay: a, m: Date.now() }; markDirty('meta'); toast('Settings saved');
+  }
+  go({ name: 'decks' });
+}
+
+/* overlays */
+function drawer() {
+  return `<div class="scrim" data-act="close"></div><nav class="drawer" aria-label="Main menu">
+    <header><b>Brighter Cards</b><span>${ALL.length} cards</span></header>
+    <button data-act="home">${svg('decks')}Decks</button>
+    <button data-act="add">${svg('add')}Add card</button>
+    <button data-act="settings">${svg('tune')}Settings</button></nav>`;
+}
+function deckSheet(dk, sub, confirmReset) {
+  const name = deckName(dk, sub == null ? null : sub);
+  const s = sub == null ? '' : sub;
+  if (confirmReset) return `<div class="scrim" data-act="close"></div><div class="sheet" role="dialog" aria-label="Reset ${esc(name)}">
+    <h3>Reset ${esc(name)}?</h3><p class="warn">Every card in this deck goes back to new. Its review history is lost.</p>
+    <button data-act="doReset" data-deck="${dk}" data-sub="${s}" style="color:var(--again)">Reset progress</button>
+    <button data-act="close">Cancel</button></div>`;
+  return `<div class="scrim" data-act="close"></div><div class="sheet" role="dialog" aria-label="${esc(name)}">
+    <h3>${esc(name)}</h3>
+    <button data-act="study" data-deck="${dk}" data-sub="${s}">Study now</button>
+    <button data-act="add" data-deck="${dk}" data-sub="${s}">Add a card here</button>
+    <button data-act="unhide" data-deck="${dk}" data-sub="${s}">Bring back buried &amp; suspended cards</button>
+    <button data-act="askReset" data-deck="${dk}" data-sub="${s}">Reset progress…</button>
+    <button data-act="close">Cancel</button></div>`;
+}
+function reviewMenu() {
+  return `<div class="scrim" data-act="close" style="background:transparent"></div><div class="menu" role="menu">
+    <button data-act="speak" ${R.card.say && DECK[R.card.d].lang ? '' : 'disabled'}>Replay audio</button>
+    <button data-act="bury">Bury card</button>
+    <button data-act="suspend">Suspend card</button>
+    <button data-act="forget">Reset card to new</button>
+    ${R.card.custom ? '<button data-act="delCard">Delete card</button>' : ''}
+    <button data-act="addHere">Add card</button></div>`;
+}
+function setOverlay(h) { overlay = h; render(); }
+const subOf = el => el.dataset.sub === '' || el.dataset.sub == null ? null : +el.dataset.sub;
+
+const backupText = () => JSON.stringify({ app: 'brighter-cards', v: 1, cards: S.cards, settings: S.settings, custom: S.custom });
+let restoreFileText = '';
+app.addEventListener('change', async e => {
+  if (e.target.id !== 'sFile' || !e.target.files[0]) return;
+  restoreFileText = await e.target.files[0].text();
+  toast('Backup file loaded. Tap Restore to use it.');
+});
+
+/* events */
+let pressTimer = 0, longPressed = false;
+app.addEventListener('pointerdown', e => {
+  const row = e.target.closest('.row'); if (!row || e.target.closest('[data-toggle]')) return;
+  longPressed = false;
+  pressTimer = setTimeout(() => { longPressed = true; setOverlay(deckSheet(row.dataset.deck, subOf(row))); }, 500);
+});
+['pointerup', 'pointerleave', 'pointercancel', 'pointermove'].forEach(t => app.addEventListener(t, e => { if (t !== 'pointermove' || Math.abs(e.movementY) > 4) clearTimeout(pressTimer); }));
+app.addEventListener('contextmenu', e => { const row = e.target.closest('.row'); if (row) { e.preventDefault(); clearTimeout(pressTimer); setOverlay(deckSheet(row.dataset.deck, subOf(row))); } });
+app.addEventListener('submit', e => { e.preventDefault(); if (e.target.id === 'addForm') saveCard(); });
+app.addEventListener('click', e => {
+  const t = e.target.closest('[data-act],[data-ease],[data-toggle],.row');
+  if (!t) return;
+  if (t.dataset.toggle) { S.open[t.dataset.toggle] = !S.open[t.dataset.toggle]; saveLocal(); render(); return; }
+  if (t.dataset.ease) { answer(+t.dataset.ease); return; }
+  if (t.classList.contains('row') && !t.dataset.act) { if (longPressed) { longPressed = false; return; } startReview(t.dataset.deck, subOf(t)); return; }
+  const a = t.dataset.act;
+  switch (a) {
+    case 'drawer': setOverlay(drawer()); break;
+    case 'close': setOverlay(''); break;
+    case 'home': window.speechSynthesis?.cancel(); go({ name: 'decks' }); break;
+    case 'add': go({ name: 'add', deck: t.dataset.deck ? `${t.dataset.deck}|${t.dataset.sub}` : null }); break;
+    case 'addHere': go({ name: 'add', deck: `${R.card.d}|${R.card.u >= 0 ? R.card.u : ''}` }); break;
+    case 'settings': go({ name: 'settings' }); break;
+    case 'saveSettings': saveSettings(); break;
+    case 'saveCard': saveCard(); break;
+    case 'show': showAnswer(); break;
+    case 'cardtap': if (e.target.closest('button,a,pre')) return; showAnswer(); break;
+    case 'speak': speak(R.card.say, DECK[R.card.d].lang); if (overlay) setOverlay(''); break;
+    case 'undo': undo(); break;
+    case 'flag': { const f = !st(R.card.id).flag; setCard(R.card.id, { flag: f ? 1 : 0 }, f ? 'Card flagged' : 'Flag removed'); render(); break; }
+    case 'rmenu': setOverlay(reviewMenu()); break;
+    case 'bury': setCard(R.card.id, { bury: today() }, 'Card buried until tomorrow'); overlay = ''; pickNext(); render(); break;
+    case 'suspend': setCard(R.card.id, { sus: 1 }, 'Card suspended'); overlay = ''; pickNext(); render(); break;
+    case 'forget': S.cards[R.card.id] = { s: 'n', m: Date.now() }; markDirty(R.card.d); toast('Card reset to new'); overlay = ''; pickNext(); render(); break;
+    case 'delCard': { const id = R.card.id; const cc = S.custom.list.find(x => x.id === id); if (cc) { cc.del = 1; cc.m = Date.now(); } S.custom.m = Date.now(); rebuildCards(); markDirty('custom'); toast('Card deleted'); overlay = ''; pickNext(); render(); break; }
+    case 'study': startReview(t.dataset.deck, subOf(t)); break;
+    case 'unhide': { let n = 0; for (const c of deckCards(t.dataset.deck, subOf(t))) { const s = st(c.id); if (s.sus || s.bury != null) { const x = { ...s, m: Date.now() }; delete x.sus; delete x.bury; S.cards[c.id] = x; n++; } } markDirty(t.dataset.deck); toast(n ? `${n} card${n === 1 ? '' : 's'} brought back` : 'No hidden cards in this deck'); setOverlay(''); break; }
+    case 'askReset': setOverlay(deckSheet(t.dataset.deck, subOf(t), true)); break;
+    case 'doReset': { const now = Date.now(); for (const c of deckCards(t.dataset.deck, subOf(t))) if (S.cards[c.id]) S.cards[c.id] = { s: 'n', m: now }; markDirty(t.dataset.deck); toast('Deck reset'); setOverlay(''); break; }
+    case 'saveBackup': {
+      const blob = new Blob([backupText()], { type: 'application/json' }), a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = `brighter-cards-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      toast('Backup saved to your downloads'); break;
+    }
+    case 'copyBackup': {
+      const data = backupText();
+      const box = document.getElementById('sRestore');
+      navigator.clipboard?.writeText(data).then(() => toast('Backup copied'), () => { box.value = data; box.select(); toast('Select all and copy the text in the box'); })
+        ?? (box.value = data, box.select());
+      break;
+    }
+    case 'restore': {
+      try {
+        const b = JSON.parse(document.getElementById('sRestore').value.trim() || restoreFileText);
+        if (b.app !== 'brighter-cards') throw 0;
+        const now = Date.now();
+        S.cards = Object.fromEntries(Object.entries(b.cards || {}).map(([k, v]) => [k, { ...v, m: now }]));
+        S.settings = { ...S.settings, ...b.settings, m: now };
+        S.custom = { list: (b.custom?.list || []).map(c => ({ ...c, m: now })), m: now };
+        rebuildCards(); saveLocal(); toast('Backup restored'); go({ name: 'decks' });
+      } catch (err) { toast('That text is not a Brighter Cards backup. Paste the whole backup and try again.'); }
+      break;
+    }
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea,select')) return;
+  if (e.key === 'Escape' && overlay) { setOverlay(''); return; }
+  if (e.key === 'Enter' && e.target.classList?.contains('row')) { startReview(e.target.dataset.deck, subOf(e.target)); return; }
+  if (view.name !== 'review' || !R?.card || overlay) return;
+  if (R.side === 'q' && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); showAnswer(); }
+  else if (R.side === 'a' && '1234'.includes(e.key) && e.key) answer(+e.key);
+  else if (R.side === 'a' && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); answer(3); }
+  else if (e.key === 'r' || e.key === 'R') speak(R.card.say, DECK[R.card.d].lang);
+  else if ((e.ctrlKey || e.metaKey) && e.key === 'z') undo();
+});
+// learning cards come due while the app sits open: refresh the deck list / finished screen every 30 s
+setInterval(() => { if (overlay) return; if (view.name === 'decks') render(); else if (view.name === 'review' && !R.card) { pickNext(); render(); } }, 30000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveLocal(); else if (view.name === 'decks') render(); });
+
+render();
+</script>
+</body>
+</html>
