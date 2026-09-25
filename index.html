@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Brighter Cards</title>
 <meta name="theme-color" content="#1d9fe6">
+<script>try { if ((JSON.parse(localStorage.getItem('brighterCards.v1')) || {}).settings?.theme === 'dark') document.documentElement.dataset.theme = 'dark'; } catch (e) {}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap">
 <style>
@@ -17,17 +18,6 @@
   --new: #1565c0; --learn: #c62828; --due: #2e7d32; --zero: #a9b2b9;
   --again: #d9363e; --hard: #4b5963; --good: #43a047; --easy: #1d9fe6; --showbtn: #4b5963;
   --code-bg: #f1f4f6; --flag: #e53935; --scrim: rgba(0,0,0,.4); --shadow: 0 2px 6px rgba(0,0,0,.25);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --primary: #1e2a33; --primary-dark: #141c22; --on-primary: #e8eef2;
-    --bg: #1c1f22; --surface: #25292d; --surface-2: #2b3035; --text: #e6eaed; --muted: #9aa5ad;
-    --divider: #353b41; --counts-bg: #243745; --hover: rgba(255,255,255,.06);
-    --new: #64b5f6; --learn: #ef7373; --due: #7cc47f; --zero: #58626a;
-    --again: #b8323a; --hard: #4d5b66; --good: #3d8b41; --easy: #1a86c4; --showbtn: #3a454e;
-    --code-bg: #2b3035; --flag: #ef5350; --scrim: rgba(0,0,0,.6);
-  }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -452,6 +442,8 @@ function renderSettings() {
       <div class="sect">Daily limits (per deck)</div>
       <div class="field"><label for="sNew">New cards/day</label><input id="sNew" type="number" min="0" max="500" inputmode="numeric" value="${S.settings.newPerDay}"></div>
       <div class="field"><label for="sRev">Maximum reviews/day</label><input id="sRev" type="number" min="0" max="9999" inputmode="numeric" value="${S.settings.revPerDay}"></div>
+      <div class="sect">Appearance</div>
+      <label class="switch" for="sDark"><span>Dark theme<br><span class="help">Off: white and blue. On: dark, easier on the eyes at night.</span></span><input id="sDark" type="checkbox" ${S.settings.theme === 'dark' ? 'checked' : ''}></label>
       <div class="sect">Audio</div>
       <label class="switch" for="sAuto"><span>Play pronunciation automatically<br><span class="help">Turkish, Russian and Italian cards use your phone's text-to-speech voices.</span></span><input id="sAuto" type="checkbox" ${S.settings.autoplay ? 'checked' : ''}></label>
       <div class="sect">Backup</div>
@@ -466,9 +458,9 @@ function renderSettings() {
 function saveSettings() {
   const n = Math.max(0, Math.min(500, parseInt(document.getElementById('sNew').value, 10) || 0));
   const r = Math.max(0, Math.min(9999, parseInt(document.getElementById('sRev').value, 10) || 0));
-  const a = document.getElementById('sAuto').checked;
-  if (n !== S.settings.newPerDay || r !== S.settings.revPerDay || a !== S.settings.autoplay) {
-    S.settings = { newPerDay: n, revPerDay: r, autoplay: a, m: Date.now() }; markDirty('meta'); toast('Settings saved');
+  const a = document.getElementById('sAuto').checked, th = document.getElementById('sDark').checked ? 'dark' : 'light';
+  if (n !== S.settings.newPerDay || r !== S.settings.revPerDay || a !== S.settings.autoplay || th !== (S.settings.theme || 'light')) {
+    S.settings = { newPerDay: n, revPerDay: r, autoplay: a, theme: th, m: Date.now() }; markDirty('meta'); toast('Settings saved');
   }
   go({ name: 'decks' });
 }
@@ -515,6 +507,14 @@ app.addEventListener('change', async e => {
   restoreFileText = await e.target.files[0].text();
   toast('Backup file loaded. Tap Restore to use it.');
 });
+
+function applyTheme() {
+  const dark = S.settings.theme === 'dark';
+  if (dark) document.documentElement.dataset.theme = 'dark'; else delete document.documentElement.dataset.theme;
+  document.querySelector('meta[name=theme-color]').content = dark ? '#1e2a33' : '#1d9fe6';
+}
+applyTheme();
+app.addEventListener('change', e => { if (e.target.id === 'sDark') { S.settings.theme = e.target.checked ? 'dark' : 'light'; S.settings.m = Date.now(); saveLocal(); applyTheme(); } });
 
 /* events */
 let pressTimer = 0, longPressed = false;
@@ -577,7 +577,7 @@ app.addEventListener('click', e => {
         S.cards = Object.fromEntries(Object.entries(b.cards || {}).map(([k, v]) => [k, { ...v, m: now }]));
         S.settings = { ...S.settings, ...b.settings, m: now };
         S.custom = { list: (b.custom?.list || []).map(c => ({ ...c, m: now })), m: now };
-        rebuildCards(); saveLocal(); toast('Backup restored'); go({ name: 'decks' });
+        rebuildCards(); saveLocal(); applyTheme(); toast('Backup restored'); go({ name: 'decks' });
       } catch (err) { toast('That text is not a Brighter Cards backup. Paste the whole backup and try again.'); }
       break;
     }
